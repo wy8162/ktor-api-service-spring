@@ -4,6 +4,7 @@ import com.wy8162.config.ROLE_USER
 import com.wy8162.controller.HrController
 import com.wy8162.error.UnauthorizedAccessException
 import com.wy8162.model.ApiContext
+import com.wy8162.spring.inject
 import io.ktor.server.application.Application
 import io.ktor.server.application.call
 import io.ktor.server.application.log
@@ -15,7 +16,6 @@ import io.ktor.server.routing.get
 import io.ktor.server.routing.route
 import io.ktor.server.routing.routing
 import io.ktor.util.AttributeKey
-import org.koin.ktor.ext.inject
 import kotlin.time.ExperimentalTime
 import kotlin.time.measureTime
 

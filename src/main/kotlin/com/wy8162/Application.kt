@@ -6,11 +6,14 @@ import com.wy8162.plugins.registerApiModule
 import com.wy8162.plugins.registerApiV1Routes
 import com.wy8162.plugins.registerErrorHandlingModule
 import com.wy8162.plugins.registerHrApiV1Routes
-import com.wy8162.plugins.registerKoinModules
 import com.wy8162.plugins.registerMonitoringModule
 import com.wy8162.plugins.registerSecurityModule
 import com.wy8162.plugins.registerSwaggerRoutes
+import com.wy8162.spring.SpringIntegration
+import com.wy8162.spring._springApplicationContext
+import com.wy8162.spring.inject
 import io.ktor.client.HttpClient
+import io.ktor.server.application.install
 import io.ktor.server.engine.addShutdownHook
 import io.ktor.server.engine.applicationEngineEnvironment
 import io.ktor.server.engine.connector
@@ -19,7 +22,6 @@ import io.ktor.server.netty.Netty
 import io.ktor.server.netty.NettyApplicationEngine
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
-import org.koin.core.context.GlobalContext
 import java.lang.management.ManagementFactory
 import java.lang.management.RuntimeMXBean
 import java.time.Duration
@@ -31,7 +33,8 @@ fun appEnv() = applicationEngineEnvironment {
 
     @Suppress("unused") // application.conf references the main function. This annotation prevents the IDE from marking it as unused.
     module() {
-        registerKoinModules()
+        install(SpringIntegration)
+
         registerApiModule()
         registerMonitoringModule()
         registerApiV1Routes()
@@ -58,7 +61,7 @@ fun main() {
     val graceShutdown: Duration = Duration.ofSeconds(2)
     val timeout: Duration = Duration.ofSeconds(5)
 
-    val httpClient: HttpClient by lazy { GlobalContext.get().get() }
+    val httpClient: HttpClient by inject()
 
     val engine = embeddedServer(Netty, environment = appEnv())
     engine.addShutdownHook {
@@ -90,5 +93,7 @@ private fun gracefulShutdownHook(
         delay(preWait.toMillis())
         engine.stop(graceShutdown.toMillis(), timeout.toMillis())
     }
+    engine.environment.log.info("Shutting down Spring Framework...")
+    _springApplicationContext.close()
     httpClient.close()
 }

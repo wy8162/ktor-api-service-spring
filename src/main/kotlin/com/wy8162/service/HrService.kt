@@ -8,11 +8,13 @@ import com.wy8162.model.hr.Employee
 import com.wy8162.model.hr.EmployeeEntity
 import com.wy8162.model.hr.toEmployee
 import org.jetbrains.exposed.sql.select
+import org.springframework.stereotype.Service
 
 interface HrService {
     suspend fun getEmployee(employeeId: Int): Either<ApiError, Employee>
 }
 
+@Service
 class HrServiceImpl(
     private val dbService: DatabaseService
 ) : HrService {

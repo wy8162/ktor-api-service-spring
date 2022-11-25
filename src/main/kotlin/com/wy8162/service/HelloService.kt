@@ -1,6 +1,7 @@
 package com.wy8162.service
 
 import com.wy8162.model.hr.Employee
+import org.springframework.stereotype.Service
 
 data class HelloMessage(
     val message: String,
@@ -10,13 +11,14 @@ data class HelloMessage(
 
 interface HelloService {
     suspend fun sayHi(name: String): HelloMessage
-    suspend fun textMessage(name: String): HelloMessage
+    suspend fun textMessage(message: String): HelloMessage
 }
 
 interface SmsService {
     suspend fun sendSms(message: String): HelloMessage
 }
 
+@Service
 class SmsServiceImpl : SmsService {
     override suspend fun sendSms(message: String): HelloMessage {
         println("SMS: $message")
@@ -24,6 +26,7 @@ class SmsServiceImpl : SmsService {
     }
 }
 
+@Service
 class HelloServiceImpl(
     private val hrService: HrService,
     private val smsService: SmsService

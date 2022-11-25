@@ -18,8 +18,10 @@ import com.wy8162.utils.validate
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.request.receive
 import org.slf4j.MDC
+import org.springframework.stereotype.Controller
 import java.util.Date
 
+@Controller
 class UserController(
     private val userService: UserService
 ) {

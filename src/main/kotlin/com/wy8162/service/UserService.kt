@@ -13,6 +13,7 @@ import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.selectAll
+import org.springframework.stereotype.Service
 import java.util.UUID
 
 interface UserService {
@@ -23,6 +24,7 @@ interface UserService {
     suspend fun getAllUsers(): Either<ApiError, List<User>>
 }
 
+@Service
 class UserServiceImpl(
     private val dbService: DatabaseService
 ) : UserService {

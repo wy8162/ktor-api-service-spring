@@ -1,6 +1,7 @@
 val ktor_version: String by project
 val kotlin_version: String by project
 val logback_version: String by project
+val spring_version: String by project
 val prometeus_version: String by project
 val kotlin_logging_version: String by project
 val koin_version: String by project
@@ -70,9 +71,9 @@ dependencies {
     implementation("io.ktor:ktor-server-auth:$ktor_version")
     implementation("io.ktor:ktor-server-auth-jwt:$ktor_version")
 
-    // Koin
-    implementation("io.insert-koin:koin-ktor:$koin_version")
-    implementation("io.insert-koin:koin-logger-slf4j:$koin_version")
+    // Spring
+    implementation("org.springframework:spring-core:$spring_version")
+    implementation("org.springframework:spring-context:$spring_version")
 
     // Arrow
     implementation("io.arrow-kt:arrow-core:$arrow_version")
@@ -135,8 +136,6 @@ dependencies {
 
     // Test
     testImplementation("io.ktor:ktor-server-test-host:$ktor_version")
-    testImplementation("io.insert-koin:koin-test:$koin_version")
-    testImplementation("io.insert-koin:koin-test-junit5:$koin_version")
     testImplementation("org.junit.jupiter:junit-jupiter:$junit_version")
     testImplementation("org.assertj:assertj-core:$assertj_version")
     testImplementation("io.mockk:mockk:$mockk_version")

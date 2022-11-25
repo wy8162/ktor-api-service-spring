@@ -5,7 +5,9 @@ import com.wy8162.error.InvalidEmployeeIdException
 import com.wy8162.model.ApiContext
 import com.wy8162.service.HrService
 import io.ktor.http.HttpStatusCode
+import org.springframework.stereotype.Controller
 
+@Controller
 class HrController(
     private val hrService: HrService
 ) {

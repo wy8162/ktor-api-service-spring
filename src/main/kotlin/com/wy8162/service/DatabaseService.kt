@@ -11,6 +11,7 @@ import org.jetbrains.exposed.sql.transactions.TransactionManager
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.postgresql.util.PSQLState
+import org.springframework.stereotype.Service
 import java.sql.ResultSet
 
 interface DatabaseService {
@@ -19,6 +20,7 @@ interface DatabaseService {
     fun resolveException(cause: Throwable): ApiError
 }
 
+@Service
 class DatabaseServiceImpl : DatabaseService {
     override suspend fun <T> databaseQuery(block: () -> T): T =
         withContext(Dispatchers.IO) {

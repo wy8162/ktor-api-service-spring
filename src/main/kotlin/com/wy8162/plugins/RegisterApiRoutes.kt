@@ -8,6 +8,7 @@ import com.wy8162.rbac.authorize
 import com.wy8162.service.HelloMessage
 import com.wy8162.service.HelloService
 import com.wy8162.service.HrService
+import com.wy8162.spring.inject
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.request.header
@@ -23,7 +24,6 @@ import io.ktor.server.routing.get
 import io.ktor.server.routing.post
 import io.ktor.server.routing.route
 import io.ktor.server.routing.routing
-import org.koin.ktor.ext.inject
 import org.slf4j.MDC
 import kotlin.time.ExperimentalTime
 import kotlin.time.measureTime
@@ -80,7 +80,7 @@ private fun Route.apiV1Route() {
             call.application.log.info("${call.request.uri} ($time)")
         }
 
-        get("/testkoin") {
+        get("/testspring") {
             val h1 = hrService.getEmployee(101)
             val h2 = hrService.getEmployee(102)
             val h3 = hrService.getEmployee(103)

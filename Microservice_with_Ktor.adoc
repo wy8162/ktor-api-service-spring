@@ -1,0 +1,190 @@
+:source-highlighter: pygments
+
+= Implementing Microservice with Ktor
+:sectnums:
+:toc:
+:toclevels: 4
+:toc-title: Table of Contents
+
+:description: Example AsciiDoc document
+:keywords: AsciiDoc
+:imagesdir: ./img
+
+== Build and Run the Application
+* Run the Jar file directly
+```
+$ java -jar build/libs/app.jar
+```
+* Build a Docker Image
+```
+$ docker build -f docker/Dockerfile -t wy8162/ktor-api-service:latest .
+
+# Or alternately
+$ docker-compose run -f docker/docker-compose-build.yaml run app
+
+```
+
+=== Running Open Telemetry Agent with or without Debug
+* Download and copy the Open Telemetry agent and the Kotlin extension to /app: opentelemetry-agent.jar and opentelemetry-extensions-kotlin.jar.
+* Set the following environment variables
+```
+OTEL_JAVAAGENT_EXTENSIONS=/app/opentelemetry-extensions-kotlin.jar
+OTEL_TRACES_EXPORTER=otlp
+OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4317 (or whatever URL)
+OTEL_SERVICE_NAME=ktor-api-service
+OTEL_EXPORTER_OTLP_PROTOCOL=grpc
+OTEL_RESOURCE_ATTRIBUTES=deployment.environment=dev (or whatever environment)
+```
+* Run the application with Java agent
+```
+$ java -javaagent:/app/opentelemetry-javaagent.jar \
+-jar /app/app.jar
+
+Or add debug option
+
+$ java -javaagent:/app/opentelemetry-javaagent.jar \
+-Dotel.javaagent.debug=true
+-jar /app/app.jar
+```
+
+=== OpenTelemetry with Jaeger
+
+==== Start Jaeger
+```
+docker run --rm --name jaeger \
+  -e COLLECTOR_ZIPKIN_HTTP_PORT=9411 \
+  -p 5775:5775/udp \
+  -p 6831:6831/udp \
+  -p 6832:6832/udp \
+  -p 5778:5778 \
+  -p 16686:16686 \
+  -p 14268:14268 \
+  -p 14250:14250 \
+  -p 9411:9411 \
+  jaegertracing/all-in-one
+```
+
+Open http://localhost:16686[Jaeger]
+
+See opentelemetry.properties for detailed configurations.
+
+==== Start OpenTelemetry Agent
+```
+java -javaagent:opentelemetry/opentelemetry-javaagent.jar \
+-Dotel.javaagent.configuration-file=src/main/resources/opentelemetry.properties \
+-jar build/libs/app.jar
+```
+
+==== OpenTelemetry Context Propagation
+. Run docker-compose to run the application and the Jaeger in Docker containers. The application listens to port 8081.
+. Run application locally which listens to port 8080.
+. Call API "/api/v1/users/remotehello/101". This API will call "http://localhost:8081/api/v1/users/hello/101".
+. The trace will show end to end view.
+
+```
+$ cd docker
+$ docker-compose up
+$ cd ..
+$ java -javaagent:opentelemetry/opentelemetry-javaagent.jar \
+-Dotel.javaagent.configuration-file=src/main/resources/opentelemetry.properties \
+-jar build/libs/app.jar
+```
+
+== Building Microservice with Ktor
+=== Why Ktor
+*https://ktor.io[Lightweight and Flexible]*
+_Ktor allows you to use only what you need, and to structure your application the way you need it. In addition, you can also extend Ktor with your own plugin very easily._
+
+*https://ktor.io[Kotlin and Coroutines]* _Ktor is built from the ground up using Kotlin and Coroutines. You get to use a concise, multiplatform language, as well as the power of asynchronous programming with an intuitive imperative flow._
+
+Ktor runs on top of different non-block and async engines:
+
+. Netty
+. CIO
+. Jetty
+. etc
+
+Based on my test, Netty is much more stable and also faster than CIO.
+
+=== Async, Non-Blocking and Event Driven
+Ktor applications built based on engines including Netty, CIO, etc are async and event driven. Coroutines make programing non-blocking async straight forward and easy.
+
+- Async - the response can come at anytime and in any order.
+- Non-blocking - there is no need to wait until the process is finished, i.e., waiting for data from network socket.
+- Event driven - the requester for service gets notification once the processing is done.
+
+=== Application Architecture
+A typical Ktor applications consists of the following components:
+
+. Ktor engine which is the server to be bundled as a self-contained package. There are a few options including Netty, Jetty, CIO and even Tomcat.
+. Plugins which are the modules or components of the Ktor application. Ktor plugins installs the features needed. For examples, content negotiations, security, routes, error handling, HTTP client, metrics, etc.
+. Routing which iss used to organize the API endpoints.
+. Application configurations. There are a few options including HOCON (application.conf), YAML (application.yaml), or configurations in code.
+
+By following the steps in Ktor, it's very easy to start a microservice easily. But there are more to develop a real service.
+
+==== Application Configurations
+The application below specifies the following:
+
+. The port numbers for service and metrics.
+. The environments.
+. The database configurations and Flyway database migration.
+
+*Application Configurations*
+[source,HOCON,numbered]
+----
+ktor {
+    serverPort: 8080                            # <1>
+    metricsServer: 9999
+
+    environment: "local"                        # <2>
+
+    app {
+        task {
+            timeout: 5000
+        }
+        serviceEndpoints: [ "/api" ]
+        metricsEndpoints: [ "/metrics", "health"]
+        http {
+            maxRetries: 3
+            requestTimeout: 3000
+            connectTimeout: 3000
+            socketTimeout: 3000
+        }
+    }
+}
+
+database {                                      # <3>
+    url: "jdbc:postgresql://localhost:5432/postgres-db"
+    username: "postgres"
+    password: "postgres"
+    driver: "org.postgresql.Driver"
+}
+
+flyway {                                        # <4>
+    info: true
+    strategy: MIGRATE
+}
+----
+<1> the port number for the API endpoints
+<2> define the environment.
+<3> database configurations.
+<4> Flyway configurations.
+
+*Load the Application Configurations*
+[source,kotlin,numbered]
+----
+class ApplicationConfigurations(
+    private val appConfig: Config = ConfigFactory.load()
+) : Config by appConfig
+
+private val applicationConfig = ApplicationConfigurations()
+
+object AppConfig {
+    fun applicationEnvironment(): String = applicationConfig.getString("ktor.environment")
+    fun appServerPort(): Int = applicationConfig.getInt("ktor.serverPort")
+    fun appMetricServerPort(): Int = applicationConfig.getInt("ktor.metricsServer")
+
+    fun CFG() = applicationConfig
+}
+----
